@@ -13,39 +13,72 @@ class CaixaDaLanchonete {
             return 'Não há itens no carrinho de compra!';
         }
 
-        const quantidadeDeItens = {};
+        const quantidadeDeItens = this.contarItens(itens);
 
-        for (const itemInfo of itens) {
-            const [codigo, quantidade] = itemInfo.split(',');
-            if (!this.cardapio[codigo]) {
-                return 'Item inválido!';
-            }
+        if (this.itemInvalido(quantidadeDeItens)) {
+            return 'Item inválido!';
+        }
 
-            if (parseInt(quantidade) <= 0) {
-                return 'Quantidade inválida!';
-            }
-
-            quantidadeDeItens[codigo] = (quantidadeDeItens[codigo] || 0) + parseInt(quantidade);
+        if (this.quantidadeInvalida(quantidadeDeItens)) {
+            return 'Quantidade inválida!';
         }
 
         let valorTotal = 0;
+        let hasPrincipal = false;
 
         for (const codigo in quantidadeDeItens) {
             const quantidade = quantidadeDeItens[codigo];
             const valorItem = this.cardapio[codigo].valor;
             valorTotal += quantidade * valorItem;
 
-            if (this.isItemExtra(codigo) && !quantidadeDeItens[this.getPrincipalItemCodigo(codigo)]) {
-                return 'Item extra não pode ser pedido sem o principal';
+            if (this.isItemExtra(codigo)) {
+                const principalCodigo = this.getPrincipalItemCodigo(codigo);
+                if (!quantidadeDeItens[principalCodigo]) {
+                    return 'Item extra não pode ser pedido sem o principal';
+                }
+            } else {
+                hasPrincipal = true;
             }
         }
 
-        if (formaDePagamento === 'dinheiro') {
-            valorTotal -= valorTotal * this.descontoDinheiro;
-        } else if (formaDePagamento === 'credito') {
-            valorTotal += valorTotal * this.acrescimoCredito;
-        } else if (formaDePagamento !== 'debito') {
-            return 'Forma de pagamento inválida!';
+        if (!hasPrincipal) {
+            return 'Não há itens principais no carrinho de compra!';
+        }
+
+        return this.aplicarDescontoOuAcrescimo(valorTotal, formaDePagamento);
+    }
+
+    contarItens(itens) {
+        const quantidadeDeItens = {};
+
+        for (const itemInfo of itens) {
+            const [codigo, quantidade] = itemInfo.split(',');
+            quantidadeDeItens[codigo] = (quantidadeDeItens[codigo] || 0) + parseInt(quantidade);
+        }
+
+        return quantidadeDeItens;
+    }
+
+    itemInvalido(quantidadeDeItens) {
+        return Object.keys(quantidadeDeItens).some(codigo => !this.cardapio[codigo]);
+    }
+
+    quantidadeInvalida(quantidadeDeItens) {
+        return Object.values(quantidadeDeItens).some(quantidade => quantidade <= 0);
+    }
+
+    aplicarDescontoOuAcrescimo(valorTotal, formaDePagamento) {
+        switch (formaDePagamento) {
+            case 'dinheiro':
+                valorTotal -= valorTotal * this.descontoDinheiro;
+                break;
+            case 'credito':
+                valorTotal += valorTotal * this.acrescimoCredito;
+                break;
+            case 'debito':
+                break;
+            default:
+                return 'Forma de pagamento inválida!';
         }
 
         return `R$ ${valorTotal.toFixed(2).replace('.', ',')}`;
