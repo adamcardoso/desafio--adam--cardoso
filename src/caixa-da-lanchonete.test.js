@@ -48,4 +48,12 @@ describe('CaixaDaLanchonete', () => {
         ['queijo com outro item', 'debito', 'Item extra não pode ser pedido sem o principal', ['cafe,1', 'queijo,1']],
     ])('compra %p em %p deve resultar em %p', (_, formaDePagamento, resultadoEsperado, itens) =>
         validaTeste(formaDePagamento, resultadoEsperado, itens));
+    
+        test('compra de múltiplos itens com quantidades diferentes', () => {
+            const itens = ['cafe,2', 'sanduiche,3', 'queijo,1'];
+            const formaDePagamento = 'dinheiro';
+            const resultadoEsperado = 'R$ 26,13';
+            validaTeste(formaDePagamento, resultadoEsperado, itens);
+        });
+           
 });
